@@ -1,0 +1,44 @@
+// Fonts
+@import url('https://fonts.bunny.net/css?family=Nunito');
+
+// Variables
+@import 'variables';
+
+// Bootstrap
+@import 'bootstrap/scss/bootstrap';
+
+// Auth form styles
+.auth-card {
+    border-radius: 10px;
+    overflow: hidden;
+    
+    .card-header {
+        padding: 1.5rem;
+    }
+    
+    .card-body {
+        padding: 2rem;
+    }
+    
+    .form-control {
+        padding: 0.75rem 1rem;
+        border: 1px solid #ddd;
+        
+        &:focus {
+            border-color: $nigerian-green;
+            box-shadow: 0 0 0 0.25rem rgba($nigerian-green, 0.25);
+        }
+    }
+    
+    .btn-primary {
+        padding: 0.75rem;
+        font-weight: 600;
+    }
+}
+
+// Nigeria flag image styling
+.nigeria-flag-img {
+    height: 30px;
+    width: auto;
+    object-fit: contain;
+}
