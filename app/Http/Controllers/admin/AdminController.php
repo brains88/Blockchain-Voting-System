@@ -60,30 +60,40 @@ class AdminController extends Controller
         }
     }
 
-   
 
     public function updateCandidate(Request $request, Candidate $candidate)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'party' => 'nullable|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
-        ]);
-
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($candidate->image) {
-                Storage::disk('public')->delete($candidate->image);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'required|string',
+                'party' => 'nullable|string|max:255',
+                'party_color' => 'nullable|string|max:7',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            ]);
+    
+            if ($request->hasFile('image')) {
+                // Delete old image if exists
+                if ($candidate->image) {
+                    Storage::disk('public')->delete($candidate->image);
+                }
+                $validated['image'] = $request->file('image')->store('candidates', 'public');
             }
-            $validated['image'] = $request->file('image')->store('candidates', 'public');
+    
+            $candidate->update($validated);
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Candidate updated successfully!'
+            ]);
+    
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating candidate: ' . $e->getMessage()
+            ], 500);
         }
-
-        $candidate->update($validated);
-
-        return redirect()->route('admin.dashboard')->with('success', 'Candidate updated successfully!');
     }
-
     public function deleteCandidate(Candidate $candidate)
     {
         if ($candidate->image) {

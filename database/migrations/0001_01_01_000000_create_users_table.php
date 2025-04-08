@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('nonce')->nullable(); 
             $table->string('auth_message')->nullable();        // For signature verification
             $table->string('name')->nullable();          // Optional
+            $table->string('role')->default('voter');  
             $table->string('email')->nullable()->unique(); // Optional for notifications
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable();      // Only needed if you'll have mixed auth

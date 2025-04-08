@@ -37,13 +37,11 @@
             </div>
             
             <div class="admin-search">
-                <form class="d-flex">
-                    <div class="input-group">
-                        <span class="input-group-text bg-transparent text-white border-end-0">
-                            <i class="fas fa-search"></i>
-                        </span>
-                        <input class="form-control border-start-0" type="search" placeholder="Search candidates...">
-                    </div>
+            <form action="{{ route('admin.logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger mb-4">
+                        <i class="fas fa-sign-out-alt me-1"></i> Logout
+                    </button>
                 </form>
             </div>
         </div>
@@ -213,25 +211,14 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ========== IMAGE PREVIEW HANDLING ==========
-    // Create modal image preview
     const createImageUpload = document.getElementById('createImageUpload');
     const createImagePreviewImg = document.getElementById('createImagePreviewImg');
-    
-    if (createImageUpload) {
-        createImageUpload.addEventListener('change', handleImagePreview);
-    }
-    
-    // Edit modal image preview
     const editImageUpload = document.getElementById('editImageUpload');
     const editImagePreviewImg = document.getElementById('editImagePreviewImg');
-    
-    if (editImageUpload) {
-        editImageUpload.addEventListener('change', handleImagePreview);
-    }
     
     function handleImagePreview(event) {
         const file = event.target.files[0];
@@ -239,80 +226,67 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const reader = new FileReader();
         reader.onload = function(e) {
-            const targetId = event.target.id;
-            if (targetId === 'createImageUpload') {
+            if (event.target.id === 'createImageUpload') {
                 createImagePreviewImg.src = e.target.result;
-            } else if (targetId === 'editImageUpload') {
+            } else if (event.target.id === 'editImageUpload') {
                 editImagePreviewImg.src = e.target.result;
             }
         };
         reader.readAsDataURL(file);
     }
 
+    if (createImageUpload) createImageUpload.addEventListener('change', handleImagePreview);
+    if (editImageUpload) editImageUpload.addEventListener('change', handleImagePreview);
+
     // ========== FORM SUBMISSION HANDLING ==========
-    // Create form submission
-    const createCandidateForm = document.getElementById('createCandidateForm');
-    if (createCandidateForm) {
-        createCandidateForm.addEventListener('submit', handleFormSubmit);
-    }
-    
-    // Edit form submission
-    const editCandidateForm = document.getElementById('editCandidateForm');
-    if (editCandidateForm) {
-        editCandidateForm.addEventListener('submit', handleFormSubmit);
-    }
-    
-    async function handleFormSubmit(e) {
+    async function handleFormSubmit(e, isEditForm = false) {
         e.preventDefault();
         
         const form = e.target;
+        const formId = form.id;
         const submitButton = form.querySelector('button[type="submit"]');
-        const submitText = form.querySelector('#submitText');
-        const submitSpinner = form.querySelector('.spinner-border');
-        const formStatus = form.querySelector('#formStatus');
+        const submitText = form.querySelector('.submit-text');
+        const submitSpinner = form.querySelector('.submit-spinner');
+        const formStatus = document.getElementById(`${formId}Status`);
         
         // Show loading state
         submitButton.disabled = true;
-        if (submitText) submitText.textContent = 'Saving...';
+        if (submitText) submitText.textContent = isEditForm ? 'Updating...' : 'Saving...';
         if (submitSpinner) submitSpinner.classList.remove('d-none');
         if (formStatus) formStatus.classList.add('d-none');
         
         try {
             const formData = new FormData(form);
             const response = await fetch(form.action, {
-                method: form.method,
+                method: 'POST',
                 body: formData,
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-HTTP-Method-Override': isEditForm ? 'PUT' : 'POST'
                 }
             });
 
             const data = await response.json();
             
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to save candidate');
+                throw new Error(data.message || (isEditForm ? 'Failed to update candidate' : 'Failed to create candidate'));
             }
 
-            // Show success message
             Swal.fire({
                 icon: 'success',
                 title: 'Success',
-                text: data.message || 'Operation completed successfully!',
+                text: data.message || (isEditForm ? 'Candidate updated successfully!' : 'Candidate created successfully!'),
                 timer: 3000,
                 showConfirmButton: false
             }).then(() => {
-                // Close modal if exists and refresh page
-                const modalId = form.closest('.modal')?.id;
-                if (modalId) {
-                    const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
-                    modal?.hide();
-                }
+                const modalId = isEditForm ? 'editCandidateModal' : 'createCandidateModal';
+                const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+                if (modal) modal.hide();
                 window.location.reload();
             });
             
         } catch (error) {
-            // Show error message
             if (formStatus) {
                 formStatus.classList.remove('d-none', 'alert-success');
                 formStatus.classList.add('alert-danger');
@@ -325,20 +299,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     text: error.message || 'An error occurred'
                 });
             }
-            
         } finally {
-            // Reset button state
             if (submitButton) submitButton.disabled = false;
-            if (submitText) submitText.textContent = form.id.includes('edit') ? 'Update Candidate' : 'Save Candidate';
+            if (submitText) submitText.textContent = isEditForm ? 'Update Candidate' : 'Save Candidate';
             if (submitSpinner) submitSpinner.classList.add('d-none');
         }
     }
 
+    // Create form
+    const createCandidateForm = document.getElementById('createCandidateForm');
+    if (createCandidateForm) {
+        createCandidateForm.addEventListener('submit', (e) => handleFormSubmit(e, false));
+    }
+    
+    // Edit form
+    const editCandidateForm = document.getElementById('editCandidateForm');
+    if (editCandidateForm) {
+        editCandidateForm.addEventListener('submit', (e) => handleFormSubmit(e, true));
+    }
+
     // ========== EDIT MODAL POPULATION ==========
     const editButtons = document.querySelectorAll('.edit-candidate');
-    const editForm = document.getElementById('editCandidateForm');
-    
-    if (editButtons && editForm) {
+    if (editButtons) {
         editButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const candidateId = this.getAttribute('data-id');
@@ -349,6 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const partyColor = this.getAttribute('data-party-color') || '#f6851b';
                 
                 // Set form action
+                const editForm = document.getElementById('editCandidateForm');
                 editForm.action = `/admin/candidates/${candidateId}`;
                 
                 // Populate form fields
@@ -362,6 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
 
     // ========== FLASH MESSAGE HANDLING ==========
     @if(session('success'))

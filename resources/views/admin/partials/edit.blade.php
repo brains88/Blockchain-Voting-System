@@ -11,6 +11,9 @@
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
+                    <!-- Status Message -->
+                    <div id="editFormStatus" class="alert d-none"></div>
+                    
                     <div class="row">
                         <div class="col-md-4">
                             <div class="image-upload-container mb-3">
@@ -25,7 +28,7 @@
                         </div>
                         <div class="col-md-8">
                             <div class="mb-3">
-                                <label for="edit_name" class="form-label">Full Name</label>
+                                <label for="edit_name" class="form-label">Full Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="edit_name" name="name" required>
                             </div>
                             <div class="row">
@@ -39,15 +42,18 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="edit_description" class="form-label">Description</label>
-                                <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                                <label for="edit_description" class="form-label">Description <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="edit_description" name="description" rows="3" required></textarea>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update Candidate</button>
+                    <button type="submit" class="btn btn-primary" id="editSubmitButton">
+                        <span id="editSubmitText">Update Candidate</span>
+                        <span id="editSubmitSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                    </button>
                 </div>
             </form>
         </div>
