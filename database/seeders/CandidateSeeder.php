@@ -79,7 +79,7 @@ class CandidateSeeder extends Seeder
             DB::table('candidates')->insert([
                 'name' => $candidate['name'],
                 'description' => $candidate['description'],
-                'image' => $candidate['image'],
+                'image' => null,
                 'party' => $candidate['party'],
                 'created_at' => now(),
                 'updated_at' => now()
