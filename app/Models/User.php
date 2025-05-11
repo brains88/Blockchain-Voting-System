@@ -27,6 +27,8 @@ class User extends Authenticatable
         'has_voted',
         'auth_message',
         'role',
+        'voter_id',    
+        'date_of_birth',
     ];
     
     // Generate new nonce

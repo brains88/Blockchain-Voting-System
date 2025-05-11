@@ -40,6 +40,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function() {
         ->name('admin.candidates.update');
     Route::delete('/candidates/{candidate}/delete', [AdminController::class, 'deleteCandidate'])
         ->name('admin.candidates.delete');
+        
 });
 
 // Home Route (redirect based on auth status)

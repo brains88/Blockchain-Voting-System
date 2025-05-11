@@ -321,27 +321,37 @@ body {
     </div>
     
     <!-- Form Section -->
-    <div class="form-section">
-        <div class="login-container">
-            <div class="login-card">
-                <div class="login-header">
-                    <img src="{{ asset('https://electionsgroup.com/wp-content/uploads/2024/09/Vote-Ballot-Box_green-499x499.png') }}" alt="Nigeria Emblem">
-                    <h3>Voting Platform Access</h3>
-                    <p>Secure authentication using blockchain</p>
-                </div>
+<div class="form-section">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="{{ asset('https://electionsgroup.com/wp-content/uploads/2024/09/Vote-Ballot-Box_green-499x499.png') }}" alt="Nigeria Emblem">
+                <h3>Voting Platform Access</h3>
+                <p>Secure authentication using blockchain or voter ID</p>
+            </div>
+            
+            <div class="login-body">
+                <button id="connectMetamask" class="btn-metamask">
+                    <i class="fab fa-ethereum"></i> Connect with MetaMask
+                    <div class="loading-spinner" id="spinner"></div>
+                </button>
                 
-                <div class="login-body">
-                    <button id="connectMetamask" class="btn-metamask">
-                        <i class="fab fa-ethereum"></i> Connect with MetaMask
-                        <div class="loading-spinner" id="spinner"></div>
-                    </button>
-                    
-                    <div class="divider">OR</div>
-                    
-                    <div class="manual-auth">
-                        <form id="walletAuthForm" method="POST" action="{{ route('wallet.login') }}">
-                        @csrf
-                            
+                <div class="divider">OR</div>
+                
+                <div class="manual-auth">
+                    <form id="walletAuthForm" method="POST" action="{{ route('wallet.login') }}">
+                    @csrf
+                        
+                        <div class="form-group">
+                            <label for="auth_method">Authentication Method</label>
+                            <select class="form-control" id="auth_method" name="auth_method">
+                                <option value="wallet">Blockchain Wallet</option>
+                                <option value="voter_id">Voter ID Card</option>
+                            </select>
+                        </div>
+
+                        <!-- Wallet Address Fields -->
+                        <div id="walletFields">
                             <div class="form-group">
                                 <label for="wallet_address">Wallet Address</label>
                                 <input type="text" class="form-control" id="wallet_address" 
@@ -354,22 +364,39 @@ body {
                                        name="signature" placeholder="Your cryptographic signature" required>
                                 <small class="text-muted">Sign the message provided after entering your wallet address</small>
                             </div>
+                        </div>
+
+                        <!-- Voter ID Fields (hidden by default) -->
+                        <div id="voterIdFields" style="display:none;">
+                            <div class="form-group">
+                                <label for="voter_id">Voter ID Number</label>
+                                <input type="text" class="form-control" id="voter_id" 
+                                       name="voter_id" placeholder="Your voter identification card number" required>
+                            </div>
                             
-                            <button type="submit" class="btn-submit">
-                                Authenticate & Continue
-                            </button>
-                        </form>
-                    </div>
-                    
-                    <div class="get-started">
-                        <h4>New to Blockchain Voting?</h4>
-                        <ol>
-                            <li>Install <a href="https://metamask.io/download.html" target="_blank">MetaMask</a> browser extension</li>
-                            <li>Create or import a wallet</li>
-                            <li>Connect your wallet to begin voting</li>
-                        </ol>
-                        <p style="margin-top: 10px;">Learn more about <a href="#">how blockchain voting works</a></p>
-                    </div>
+                            <div class="form-group">
+                                <label for="dob">Date of Birth</label>
+                                <input type="date" class="form-control" id="dob" 
+                                       name="dob" required>
+                                <small class="text-muted">You must be at least 18 years old to vote</small>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-submit">
+                            Authenticate & Continue
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="get-started">
+                    <h4>New to Blockchain Voting?</h4>
+                    <ol>
+                        <li>Install <a href="https://metamask.io/download.html" target="_blank">MetaMask</a> browser extension</li>
+                        <li>Create or import a wallet</li>
+                        <li>Connect your wallet to begin voting</li>
+                        <li>Or use your Voter ID card if you don't have a wallet</li>
+                    </ol>
+                    <p style="margin-top: 10px;">Learn more about <a href="#">how blockchain voting works</a></p>
                 </div>
             </div>
         </div>
@@ -378,22 +405,69 @@ body {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/js/all.min.js"></script>
 
+<style>
+.loading-spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
 <script>
+// Initialize form fields on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Set wallet as default method
+    document.getElementById('auth_method').value = 'wallet';
+    document.getElementById('walletFields').style.display = 'block';
+    document.getElementById('voterIdFields').style.display = 'none';
+});
+
+// Toggle between wallet and voter ID fields
+document.getElementById('auth_method').addEventListener('change', function() {
+    const method = this.value;
+    if (method === 'voter_id') {
+        document.getElementById('walletFields').style.display = 'none';
+        document.getElementById('voterIdFields').style.display = 'block';
+        document.getElementById('wallet_address').required = false;
+        document.getElementById('signature').required = false;
+    } else {
+        document.getElementById('walletFields').style.display = 'block';
+        document.getElementById('voterIdFields').style.display = 'none';
+        document.getElementById('wallet_address').required = true;
+        document.getElementById('signature').required = true;
+    }
+});
+
+// MetaMask connection code
 document.getElementById('connectMetamask').addEventListener('click', async () => {
     const button = document.getElementById('connectMetamask');
     const spinner = document.getElementById('spinner');
     
     try {
-        // 1. Reset any previous states
+        // Show loading spinner
         button.disabled = true;
         spinner.style.display = 'inline-block';
         
-        // 2. Check if MetaMask is installed
+        // Ensure wallet fields are visible
+        document.getElementById('auth_method').value = 'wallet';
+        document.getElementById('walletFields').style.display = 'block';
+        document.getElementById('voterIdFields').style.display = 'none';
+        
+        // Check if MetaMask is installed
         if (!window.ethereum) {
             throw new Error('MetaMask not detected. Please install MetaMask first.');
         }
         
-        // 3. Force account access
+        // Request account access
         const accounts = await window.ethereum.request({ 
             method: 'eth_requestAccounts' 
         }).catch(err => {
@@ -407,7 +481,7 @@ document.getElementById('connectMetamask').addEventListener('click', async () =>
         const account = accounts[0];
         document.getElementById('wallet_address').value = account;
         
-        // 4. Get persistent message from backend
+        // Get authentication message from backend
         const response = await fetch('/api/auth/nonce', {
             method: 'POST',
             headers: {
@@ -424,19 +498,14 @@ document.getElementById('connectMetamask').addEventListener('click', async () =>
         
         const { message } = await response.json();
         
-        // 5. Request signature with proper message formatting
+        // Request signature
         let signature;
         try {
             signature = await window.ethereum.request({
                 method: 'personal_sign',
-                params: [
-                    message, 
-                    account,
-                    // Optional password field can be added here if needed
-                ]
+                params: [message, account]
             });
             
-            // Debug logging (remove in production)
             console.log('Signature obtained:', signature);
             
         } catch (signError) {
@@ -452,7 +521,7 @@ document.getElementById('connectMetamask').addEventListener('click', async () =>
             throw new Error('Empty signature received');
         }
         
-        // 6. Submit form
+        // Submit form
         document.getElementById('signature').value = signature;
         document.getElementById('walletAuthForm').submit();
         
@@ -461,10 +530,28 @@ document.getElementById('connectMetamask').addEventListener('click', async () =>
         alert(`Authentication failed: ${error.message}`);
         button.disabled = false;
         spinner.style.display = 'none';
-        
-        // Show manual fallback
-        document.querySelector('.manual-auth').style.display = 'block';
-        document.getElementById('signature').focus();
+    }
+});
+
+// Age verification for voter ID
+document.getElementById('walletAuthForm').addEventListener('submit', function(e) {
+    if (document.getElementById('auth_method').value === 'voter_id') {
+        const dobInput = document.getElementById('dob');
+        if (dobInput.value) {
+            const dob = new Date(dobInput.value);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const monthDiff = today.getMonth() - dob.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+            
+            if (age < 18) {
+                e.preventDefault();
+                alert('You must be at least 18 years old to vote.');
+            }
+        }
     }
 });
 </script>

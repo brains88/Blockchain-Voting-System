@@ -13,14 +13,17 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('wallet_address')->unique();  // Ethereum wallet address (0x...)
+            $table->string('wallet_address')->nullable()->unique(); 
+            $table->string('voter_id')->nullable()->unique();      
+            $table->date('date_of_birth')->nullable();             
             $table->string('nonce')->nullable(); 
-            $table->string('auth_message')->nullable();        // For signature verification
-            $table->string('name')->nullable();          // Optional
+            $table->string('auth_method')->default('wallet');       
+            $table->string('auth_message')->nullable();
+            $table->string('name')->nullable('voter');
             $table->string('role')->default('voter');  
-            $table->string('email')->nullable()->unique(); // Optional for notifications
+            $table->string('email')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password')->nullable();      // Only needed if you'll have mixed auth
+            $table->string('password')->nullable();
             $table->rememberToken();
             
             // Voting-specific fields
@@ -30,10 +33,11 @@ return new class extends Migration
             
             $table->timestamps();
             
-            // Index for faster lookups
+            // Indexes
             $table->index('wallet_address');
+            $table->index('voter_id');
         });
-    
+
         // Password reset tokens can be kept if you'll have email auth
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
